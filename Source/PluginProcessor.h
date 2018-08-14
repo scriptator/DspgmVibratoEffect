@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
@@ -60,7 +50,5 @@ private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DelayFiltersAudioProcessor)
 
-    // dspgm::TLOSynth synth;
-
-    void process(AudioBuffer<float> &buffer, int start_samples, int end_samples);
+    dspgm::DelayFilterProcessor delayFilter;
 };

@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -23,7 +13,9 @@ DelayFiltersAudioProcessor::DelayFiltersAudioProcessor()
                      #endif
                        )
 #endif
+, delayFilter(2)   // two channels
 {
+    delayFilter.set_delay(44100);
 }
 
 DelayFiltersAudioProcessor::~DelayFiltersAudioProcessor()
@@ -95,14 +87,12 @@ void DelayFiltersAudioProcessor::changeProgramName (int index, const String& new
 //==============================================================================
 void DelayFiltersAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    delayFilter.init(sampleRate, samplesPerBlock);
 }
 
 void DelayFiltersAudioProcessor::releaseResources()
 {
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
+    // TODO destruct delayFilter?
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -144,18 +134,13 @@ void DelayFiltersAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
+    auto b = dspgm::AudioBuffer(
+            buffer.getArrayOfWritePointers(),
+            static_cast<size_t>(getTotalNumOutputChannels()),
+            static_cast<size_t>(buffer.getNumSamples())
+    );
 
-        // ..do something to the data...
-    }
+    delayFilter.process(b);
 }
 
 //==============================================================================
