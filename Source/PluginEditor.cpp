@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-DelayFiltersAudioProcessorEditor::DelayFiltersAudioProcessorEditor (DelayFiltersAudioProcessor& p)
+DelayFiltersAudioProcessorEditor::DelayFiltersAudioProcessorEditor (VibratoFilterAudioProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
 {
     // Make sure that before the constructor has finished, you've set the

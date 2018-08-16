@@ -6,12 +6,12 @@
 //==============================================================================
 /**
 */
-class DelayFiltersAudioProcessor  : public AudioProcessor
+class VibratoFilterAudioProcessor  : public AudioProcessor
 {
 public:
     //==============================================================================
-    DelayFiltersAudioProcessor();
-    ~DelayFiltersAudioProcessor();
+    VibratoFilterAudioProcessor();
+    ~VibratoFilterAudioProcessor();
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -48,7 +48,14 @@ public:
 
 private:
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DelayFiltersAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VibratoFilterAudioProcessor)
 
-    dspgm::DelayFilterProcessor delayFilter;
+    dspgm::VibratoFilterProcessor vibratoFilter;
+
+    AudioParameterFloat* baseDelay;
+    AudioParameterFloat* width;
 };
+
+//class ParameterChangeListener : juce::Listener {
+//
+//};

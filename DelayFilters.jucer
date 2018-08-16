@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="TQ4uYj" name="DelayFilters" projectType="audioplug" jucerVersion="5.3.2"
-              pluginName="DelayFilter" bundleIdentifier="com.johannesvass.DelayFilter"
+<JUCERPROJECT id="TQ4uYj" name="VibratoFilter" projectType="audioplug" jucerVersion="5.3.2"
+              pluginName="VibratoFilter" bundleIdentifier="com.johannesvass.VibratoFilter"
               pluginManufacturer="johannesvass" pluginVST3Category="Filter"
               cppLanguageStandard="17" headerPath="../../../libdspgm/include/">
-  <MAINGROUP id="T4w979" name="DelayFilters">
+  <MAINGROUP id="T4w979" name="VibratoFilter">
     <GROUP id="{716A0ED5-A344-1DBE-4760-19662344A5E4}" name="Source">
       <FILE id="KYfLJU" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>

@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-DelayFiltersAudioProcessor::DelayFiltersAudioProcessor()
+VibratoFilterAudioProcessor::VibratoFilterAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
@@ -13,22 +13,23 @@ DelayFiltersAudioProcessor::DelayFiltersAudioProcessor()
                      #endif
                        )
 #endif
-, delayFilter(2)   // two channels
+, vibratoFilter(2)   // two channels
 {
-    delayFilter.set_delay(44100);
+    addParameter (baseDelay = new AudioParameterFloat ("baseDelay", "Base Delay", 0.0f, 30.f, 10.f));
+    addParameter (width     = new AudioParameterFloat ("width",     "Width",     0.0f, 30.f, 10.f));
 }
 
-DelayFiltersAudioProcessor::~DelayFiltersAudioProcessor()
+VibratoFilterAudioProcessor::~VibratoFilterAudioProcessor()
 {
 }
 
 //==============================================================================
-const String DelayFiltersAudioProcessor::getName() const
+const String VibratoFilterAudioProcessor::getName() const
 {
     return JucePlugin_Name;
 }
 
-bool DelayFiltersAudioProcessor::acceptsMidi() const
+bool VibratoFilterAudioProcessor::acceptsMidi() const
 {
    #if JucePlugin_WantsMidiInput
     return true;
@@ -37,7 +38,7 @@ bool DelayFiltersAudioProcessor::acceptsMidi() const
    #endif
 }
 
-bool DelayFiltersAudioProcessor::producesMidi() const
+bool VibratoFilterAudioProcessor::producesMidi() const
 {
    #if JucePlugin_ProducesMidiOutput
     return true;
@@ -46,7 +47,7 @@ bool DelayFiltersAudioProcessor::producesMidi() const
    #endif
 }
 
-bool DelayFiltersAudioProcessor::isMidiEffect() const
+bool VibratoFilterAudioProcessor::isMidiEffect() const
 {
    #if JucePlugin_IsMidiEffect
     return true;
@@ -55,48 +56,48 @@ bool DelayFiltersAudioProcessor::isMidiEffect() const
    #endif
 }
 
-double DelayFiltersAudioProcessor::getTailLengthSeconds() const
+double VibratoFilterAudioProcessor::getTailLengthSeconds() const
 {
     return 0.0;
 }
 
-int DelayFiltersAudioProcessor::getNumPrograms()
+int VibratoFilterAudioProcessor::getNumPrograms()
 {
     return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
                 // so this should be at least 1, even if you're not really implementing programs.
 }
 
-int DelayFiltersAudioProcessor::getCurrentProgram()
+int VibratoFilterAudioProcessor::getCurrentProgram()
 {
     return 0;
 }
 
-void DelayFiltersAudioProcessor::setCurrentProgram (int index)
+void VibratoFilterAudioProcessor::setCurrentProgram (int index)
 {
 }
 
-const String DelayFiltersAudioProcessor::getProgramName (int index)
+const String VibratoFilterAudioProcessor::getProgramName (int index)
 {
     return {};
 }
 
-void DelayFiltersAudioProcessor::changeProgramName (int index, const String& newName)
+void VibratoFilterAudioProcessor::changeProgramName (int index, const String& newName)
 {
 }
 
 //==============================================================================
-void DelayFiltersAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void VibratoFilterAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    delayFilter.init(sampleRate, samplesPerBlock);
+    vibratoFilter.init(sampleRate, static_cast<size_t>(samplesPerBlock));
 }
 
-void DelayFiltersAudioProcessor::releaseResources()
+void VibratoFilterAudioProcessor::releaseResources()
 {
-    // TODO destruct delayFilter?
+    // TODO destruct vibratoFilter?
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool DelayFiltersAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool VibratoFilterAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
   #if JucePlugin_IsMidiEffect
     ignoreUnused (layouts);
@@ -119,7 +120,7 @@ bool DelayFiltersAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 }
 #endif
 
-void DelayFiltersAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
+void VibratoFilterAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
@@ -140,37 +141,47 @@ void DelayFiltersAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
             static_cast<size_t>(buffer.getNumSamples())
     );
 
-    delayFilter.process(b);
+    vibratoFilter.set_delay(baseDelay->get());
+    vibratoFilter.process(b);
 }
 
 //==============================================================================
-bool DelayFiltersAudioProcessor::hasEditor() const
+bool VibratoFilterAudioProcessor::hasEditor() const
 {
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-AudioProcessorEditor* DelayFiltersAudioProcessor::createEditor()
+AudioProcessorEditor* VibratoFilterAudioProcessor::createEditor()
 {
-    return new DelayFiltersAudioProcessorEditor (*this);
+//    return new DelayFiltersAudioProcessorEditor (*this);
+    return new GenericAudioProcessorEditor (this);
 }
 
 //==============================================================================
-void DelayFiltersAudioProcessor::getStateInformation (MemoryBlock& destData)
+void VibratoFilterAudioProcessor::getStateInformation (MemoryBlock& destData)
 {
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    MemoryOutputStream stream (destData, true);
+
+    stream.writeFloat (*baseDelay);
+    stream.writeFloat (*width);
 }
 
-void DelayFiltersAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void VibratoFilterAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+    MemoryInputStream stream (data, static_cast<size_t> (sizeInBytes), false);
+
+    baseDelay->setValueNotifyingHost (stream.readFloat());
+    width->setValueNotifyingHost (stream.readFloat());
 }
 
 //==============================================================================
 // This creates new instances of the plugin..
 AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new DelayFiltersAudioProcessor();
+    return new VibratoFilterAudioProcessor();
 }
