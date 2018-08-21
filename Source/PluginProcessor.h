@@ -52,8 +52,8 @@ private:
 
     dspgm::VibratoFilterProcessor vibratoFilter;
 
+    AudioParameterFloat* modfreq;
     AudioParameterFloat* baseDelay;
-    AudioParameterFloat* width;
 };
 
 //class ParameterChangeListener : juce::Listener {

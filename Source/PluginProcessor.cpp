@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include <algorithm>
 
 //==============================================================================
 VibratoFilterAudioProcessor::VibratoFilterAudioProcessor()
@@ -13,10 +14,10 @@ VibratoFilterAudioProcessor::VibratoFilterAudioProcessor()
                      #endif
                        )
 #endif
-, vibratoFilter(2)   // two channels
+, vibratoFilter()
 {
-    addParameter (baseDelay = new AudioParameterFloat ("baseDelay", "Base Delay", 0.0f, 30.f, 10.f));
-    addParameter (width     = new AudioParameterFloat ("width",     "Width",     0.0f, 30.f, 10.f));
+    addParameter (modfreq = new AudioParameterFloat ("modfreq", "Modulation Frequency", 0.5f, 10.f, 5.f));
+    addParameter (baseDelay = new AudioParameterFloat ("baseDelay", "Base Delay", 0.0f, 10.f, 1.f));
 }
 
 VibratoFilterAudioProcessor::~VibratoFilterAudioProcessor()
@@ -88,7 +89,12 @@ void VibratoFilterAudioProcessor::changeProgramName (int index, const String& ne
 //==============================================================================
 void VibratoFilterAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    vibratoFilter.init(sampleRate, static_cast<size_t>(samplesPerBlock));
+    int num_channels = std::max(getTotalNumInputChannels(), getTotalNumOutputChannels());
+    assert(num_channels > 0);
+
+    vibratoFilter.init(static_cast<size_t>(num_channels),
+                       static_cast<float>(sampleRate),
+                       static_cast<size_t>(samplesPerBlock));
 }
 
 void VibratoFilterAudioProcessor::releaseResources()
@@ -142,6 +148,7 @@ void VibratoFilterAudioProcessor::processBlock (AudioBuffer<float>& buffer, Midi
     );
 
     vibratoFilter.set_delay(baseDelay->get());
+    vibratoFilter.set_modfreq(modfreq->get());
     vibratoFilter.process(b);
 }
 
@@ -165,8 +172,8 @@ void VibratoFilterAudioProcessor::getStateInformation (MemoryBlock& destData)
     // as intermediaries to make it easy to save and load complex data.
     MemoryOutputStream stream (destData, true);
 
+    stream.writeFloat(*modfreq);
     stream.writeFloat (*baseDelay);
-    stream.writeFloat (*width);
 }
 
 void VibratoFilterAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -175,8 +182,9 @@ void VibratoFilterAudioProcessor::setStateInformation (const void* data, int siz
     // whose contents will have been created by the getStateInformation() call.
     MemoryInputStream stream (data, static_cast<size_t> (sizeInBytes), false);
 
-    baseDelay->setValueNotifyingHost (stream.readFloat());
-    width->setValueNotifyingHost (stream.readFloat());
+    // TODO how does this work?
+//    modfreq->setValueNotifyingHost (stream.readFloat());
+//    baseDelay->setValueNotifyingHost (stream.readFloat());
 }
 
 //==============================================================================
