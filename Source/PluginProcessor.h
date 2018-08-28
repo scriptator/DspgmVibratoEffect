@@ -2,8 +2,12 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include <dspgm/filter.h>
+#include <dspgm/graph.h>
 
 //==============================================================================
+
+using namespace dspgm;
+
 /**
 */
 class VibratoFilterAudioProcessor  : public AudioProcessor
@@ -50,10 +54,10 @@ private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VibratoFilterAudioProcessor)
 
-    dspgm::VibratoFilterProcessor vibratoFilter;
+    graph::ProcessorNode<VibratoFilter> vibratoFilterNode;
 
     AudioParameterFloat* modfreq;
-    AudioParameterFloat* baseDelay;
+    AudioParameterFloat* delay_ms;
 };
 
 //class ParameterChangeListener : juce::Listener {

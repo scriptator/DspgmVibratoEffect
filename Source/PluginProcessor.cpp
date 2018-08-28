@@ -14,15 +14,13 @@ VibratoFilterAudioProcessor::VibratoFilterAudioProcessor()
                      #endif
                        )
 #endif
-, vibratoFilter()
+, vibratoFilterNode("VibratoFilter")
 {
     addParameter (modfreq = new AudioParameterFloat ("modfreq", "Modulation Frequency", 0.5f, 10.f, 5.f));
-    addParameter (baseDelay = new AudioParameterFloat ("baseDelay", "Base Delay", 0.0f, 10.f, 1.f));
+    addParameter (delay_ms = new AudioParameterFloat ("baseDelay", "Base Delay", 0.0f, 10.f, 1.f));
 }
 
-VibratoFilterAudioProcessor::~VibratoFilterAudioProcessor()
-{
-}
+VibratoFilterAudioProcessor::~VibratoFilterAudioProcessor() = default;
 
 //==============================================================================
 const String VibratoFilterAudioProcessor::getName() const
@@ -92,15 +90,13 @@ void VibratoFilterAudioProcessor::prepareToPlay (double sampleRate, int samplesP
     int num_channels = std::max(getTotalNumInputChannels(), getTotalNumOutputChannels());
     assert(num_channels > 0);
 
-    vibratoFilter.init(static_cast<size_t>(num_channels),
-                       static_cast<float>(sampleRate),
-                       static_cast<size_t>(samplesPerBlock));
+    vibratoFilterNode.init(static_cast<size_t>(num_channels),
+                           static_cast<float>(sampleRate),
+                           static_cast<size_t>(samplesPerBlock));
+
 }
 
-void VibratoFilterAudioProcessor::releaseResources()
-{
-    // TODO destruct vibratoFilter?
-}
+void VibratoFilterAudioProcessor::releaseResources() {}
 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool VibratoFilterAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -147,9 +143,14 @@ void VibratoFilterAudioProcessor::processBlock (AudioBuffer<float>& buffer, Midi
             static_cast<size_t>(buffer.getNumSamples())
     );
 
-    vibratoFilter.set_delay(baseDelay->get());
-    vibratoFilter.set_modfreq(modfreq->get());
-    vibratoFilter.process(b);
+
+    float &delay_ms = vibratoFilterNode.get_param_reference("delay_ms");
+    delay_ms = this->delay_ms->get();
+
+    float &modfreq = vibratoFilterNode.get_param_reference("modfreq");
+    modfreq = this->modfreq->get();
+
+    vibratoFilterNode.process(b);
 }
 
 //==============================================================================
@@ -173,7 +174,7 @@ void VibratoFilterAudioProcessor::getStateInformation (MemoryBlock& destData)
     MemoryOutputStream stream (destData, true);
 
     stream.writeFloat(*modfreq);
-    stream.writeFloat (*baseDelay);
+    stream.writeFloat (*delay_ms);
 }
 
 void VibratoFilterAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
