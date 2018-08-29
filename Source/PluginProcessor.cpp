@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <algorithm>
+#include <dspgm/oscillator.h>
 
 //==============================================================================
 VibratoFilterAudioProcessor::VibratoFilterAudioProcessor()
@@ -92,7 +93,13 @@ void VibratoFilterAudioProcessor::prepareToPlay (double sampleRate, int samplesP
 
     vibratoFilterNode.init(static_cast<size_t>(num_channels),
                            static_cast<float>(sampleRate),
+                           50, // control rate in Hz
                            static_cast<size_t>(samplesPerBlock));
+
+    // add ugen which controls delay modification
+    std::unique_ptr<SinOsc> osc = std::make_unique<SinOsc>();
+    osc->set_amp(1);
+    vibratoFilterNode.attach_control_ugen("oscillation", std::move(osc));
 
 }
 
@@ -143,12 +150,9 @@ void VibratoFilterAudioProcessor::processBlock (AudioBuffer<float>& buffer, Midi
             static_cast<size_t>(buffer.getNumSamples())
     );
 
-
-    float &delay_ms = vibratoFilterNode.get_param_reference("delay_ms");
-    delay_ms = this->delay_ms->get();
-
-    float &modfreq = vibratoFilterNode.get_param_reference("modfreq");
-    modfreq = this->modfreq->get();
+    // set parameters
+    vibratoFilterNode.get_param_setter("delay_ms")(this->delay_ms->get());
+    vibratoFilterNode.get_param_setter("oscillation_controller.freq")(this->modfreq->get());
 
     vibratoFilterNode.process(b);
 }
