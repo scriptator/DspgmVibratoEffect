@@ -54,10 +54,13 @@ private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VibratoFilterAudioProcessor)
 
-    graph::ProcessorNode<VibratoFilter> vibratoFilterNode;
+    graph::SequenceNode rootNode;
 
     AudioParameterFloat* modfreq;
     AudioParameterFloat* delay_ms;
+
+    std::function<void(float)> delay_setter;
+    std::function<void(float)> modfreq_setter;
 };
 
 //class ParameterChangeListener : juce::Listener {

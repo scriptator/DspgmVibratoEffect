@@ -15,7 +15,7 @@ VibratoFilterAudioProcessor::VibratoFilterAudioProcessor()
                      #endif
                        )
 #endif
-, vibratoFilterNode("VibratoFilter")
+, rootNode("root")
 {
     addParameter (modfreq = new AudioParameterFloat ("modfreq", "Modulation Frequency", 0.5f, 10.f, 5.f));
     addParameter (delay_ms = new AudioParameterFloat ("baseDelay", "Base Delay", 0.0f, 10.f, 1.f));
@@ -91,16 +91,20 @@ void VibratoFilterAudioProcessor::prepareToPlay (double sampleRate, int samplesP
     int num_channels = std::max(getTotalNumInputChannels(), getTotalNumOutputChannels());
     assert(num_channels > 0);
 
-    vibratoFilterNode.init(static_cast<size_t>(num_channels),
+    rootNode.add_node(std::make_unique<graph::ProcessorNode<VibratoFilter>>("VibratoFilter"));
+    rootNode.init(static_cast<size_t>(num_channels),
                            static_cast<float>(sampleRate),
-                           50, // control rate in Hz
+                           static_cast<float>(sampleRate), // control rate in Hz // FIXME sounds awful even with 2000 Hz
                            static_cast<size_t>(samplesPerBlock));
 
     // add ugen which controls delay modification
     std::unique_ptr<SinOsc> osc = std::make_unique<SinOsc>();
     osc->set_amp(1);
-    vibratoFilterNode.attach_control_ugen("oscillation", std::move(osc));
+    rootNode.attach_control_ugen("VibratoFilter.oscillation", std::move(osc));
 
+    // retrieve setter functions for parameters
+    this->delay_setter = rootNode.get_param_setter("VibratoFilter.delay_ms");
+    this->modfreq_setter = rootNode.get_param_setter("VibratoFilter.oscillation_controller.freq");
 }
 
 void VibratoFilterAudioProcessor::releaseResources() {}
@@ -151,10 +155,10 @@ void VibratoFilterAudioProcessor::processBlock (AudioBuffer<float>& buffer, Midi
     );
 
     // set parameters
-    vibratoFilterNode.get_param_setter("delay_ms")(this->delay_ms->get());
-    vibratoFilterNode.get_param_setter("oscillation_controller.freq")(this->modfreq->get());
+    delay_setter(this->delay_ms->get());
+    modfreq_setter(this->modfreq->get());
 
-    vibratoFilterNode.process(b);
+    rootNode.process(b);
 }
 
 //==============================================================================
