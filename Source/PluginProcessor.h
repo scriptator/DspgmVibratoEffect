@@ -59,8 +59,8 @@ private:
     AudioParameterFloat* modfreq;
     AudioParameterFloat* delay_ms;
 
-    std::function<void(float)> delay_setter;
-    std::function<void(float)> modfreq_setter;
+    Parameter<float> delay_param;
+    Parameter<float> modfreq_param;
 };
 
 //class ParameterChangeListener : juce::Listener {

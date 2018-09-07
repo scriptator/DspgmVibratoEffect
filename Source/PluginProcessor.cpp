@@ -91,10 +91,14 @@ void VibratoFilterAudioProcessor::prepareToPlay (double sampleRate, int samplesP
     int num_channels = std::max(getTotalNumInputChannels(), getTotalNumOutputChannels());
     assert(num_channels > 0);
 
+    if (rootNode.is_initialized()) {
+        std::cout << "Removing node VibratoFilter to be able to add it again" << std::endl;
+        rootNode.remove_node("VibratoFilter");
+    }
     rootNode.add_node(std::make_unique<graph::ProcessorNode<VibratoFilter>>("VibratoFilter"));
     rootNode.init(static_cast<size_t>(num_channels),
                            static_cast<float>(sampleRate),
-                           static_cast<float>(sampleRate), // control rate in Hz // FIXME sounds awful even with 2000 Hz
+                           static_cast<float>(sampleRate / 2), // control rate in Hz
                            static_cast<size_t>(samplesPerBlock));
 
     // add ugen which controls delay modification
@@ -102,9 +106,9 @@ void VibratoFilterAudioProcessor::prepareToPlay (double sampleRate, int samplesP
     osc->set_amp(1);
     rootNode.attach_control_ugen("VibratoFilter.oscillation", std::move(osc));
 
-    // retrieve setter functions for parameters
-    this->delay_setter = rootNode.get_param_setter("VibratoFilter.delay_ms");
-    this->modfreq_setter = rootNode.get_param_setter("VibratoFilter.oscillation_controller.freq");
+    // retrieve parameter objects
+    this->delay_param = rootNode.get_param("VibratoFilter.delay_ms");
+    this->modfreq_param = rootNode.get_param("VibratoFilter.oscillation_controller.freq");
 }
 
 void VibratoFilterAudioProcessor::releaseResources() {}
@@ -155,8 +159,8 @@ void VibratoFilterAudioProcessor::processBlock (AudioBuffer<float>& buffer, Midi
     );
 
     // set parameters
-    delay_setter(this->delay_ms->get());
-    modfreq_setter(this->modfreq->get());
+    delay_param = this->delay_ms->get();
+    modfreq_param = this->modfreq->get();
 
     rootNode.process(b);
 }
